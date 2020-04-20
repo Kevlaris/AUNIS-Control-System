@@ -1,7 +1,5 @@
-# AUNIS-Control-System
-This is an Opencomputers control system for Aunis Stargates in Minecraft. It is based on two computers and a Milky Way Stargate.
-Main features:
-- Simple dialing program
-- Simple wormhole shutdown program
-- Event handling program for the gate computer
-- Network-based control, so you don't have to worry about too many components in your network ;)
+# AUNIS-Control-System Private Version
+This is the private version of the system which I use in my base. It has more functions, for example: detects incoming wormholes and sets off klaxons.
+
+If you'd like to use this, you will need to install Opensecurity and connect an Alarm Block to the Gate Computer and you will need to configure the alarm sound.
+If you'd like to use lockdown.lua, you will need to connect some doors/rolldoors and type their addresses in. You will also need to configure the password.
