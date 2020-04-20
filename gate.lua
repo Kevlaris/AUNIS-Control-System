@@ -1,5 +1,5 @@
--- gate.lua v1.1
--- made by Kevlaris
+-- gate.lua v1.4 - PRIVATE
+-- by Kevlaris
 
 c = require("component")
 event = require("event")
@@ -7,20 +7,42 @@ os = require("os")
 event = require("event")
 serialization = require("serialization")
 sg = c.stargate
+alarm = c.os_alarm
 modem = c.modem
 port = 123
-local asd = 1
-print("SGC Gate Computer Program v1.1 /by Kevlaris")
+aunisPort = 666
+asd = 1
+lockdown = false
+print("SGC Gate Computer Program v1.4 /by Kevlaris")
 print("--------------------------------------------------------------------------------------------------------------------------------------------------------------")
 print()
 
 repeat
+
+	event.listen("stargate_incoming_wormhole", function()
+		print("Incoming wormhole. Raising alarm")
+		alarm.setAlarm("sgcalarm")
+		alarm.setRange(15)
+		alarm.activate()
+		local _, caller = event.pull(nil, "stargate_close")
+		if caller == false then
+			print("No active wormhole detected. Deactivating alarm")
+			alarm.deactivate()
+		end
+	end)
+
+	event.listen("stargate_close", function()
+		alarm.deactivate()
+		os.sleep(2)
+	end)
+
 	modem.open(port)
+	modem.open(666)
 	print("Port opened. Listening for incoming messages and events")
 	print()
 
-	local _, _, _, _, _, raw, address_raw = event.pull(nil, "modem_message")
-	modem.close(port)
+	_, _, _, incomingPort, _, raw, raw_address, chev = event.pull(nil, "modem")
+	modem.close(incomingPort)
 	print("Message recieved.")
 	os.sleep(0.5)
 	
@@ -28,8 +50,27 @@ repeat
 		print("Attempting to shut down wormhole")
 		os.sleep(0.7)
 		sg.disengageGate()
+
+elseif incomingPort == 666 then
+  print("Incoming message from ".. raw_address .."'s Universe Dialer")
+  print("Message: ".. raw)
+
+	elseif raw == "lockdown" then
+	repeat
+		lockdown = true
+		print("Lockdown protocol initiated. Port closed, Stargate control paused.")
+		modem.open(port)
+		local _, _, _, _, _, ld = event.pull(nil, "modem_message")
+		if ld == "lockdown_over" then
+			print("Lockdown protocol cancelled.")
+			lockdown = false
+		end
+		until lockdown == false
 	elseif raw == "dial" then
-		local address = serialization.unserialize(address_raw)
+		if chev == "9" then
+			getMaxEnergyStored()
+		end
+		local address = serialization.unserialize(raw_address)
 		print()
 		os.sleep(0.5)
 		print("Dialing")
@@ -39,7 +80,6 @@ repeat
 		function dialNext(dialed)
 			glyph = address[dialed + 1]
 			print("Engaging "..glyph.."... ")
-
 			sg.engageSymbol(glyph)
 		end
 
@@ -55,7 +95,6 @@ repeat
 		
 				print("Engaging...")
 				sg.engageGate()
-		
 				doing = false
 			else
 				dialNext(num)
